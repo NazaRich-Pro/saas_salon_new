@@ -1,0 +1,26 @@
+-r requirements.txt
+
+# Development tools
+black==24.2.0
+flake8==7.0.0
+mypy==1.8.0
+django-stubs==4.2.7
+djangorestframework-stubs==3.14.5
+ipython==8.21.0
+django-debug-toolbar==4.3.0
+
+# Testing
+pytest==8.0.2
+pytest-django==4.8.0
+pytest-cov==4.1.0
+pytest-xdist==3.5.0
+factory-boy==3.3.0
+faker==23.2.1
+freezegun==1.4.0
+
+# Code quality
+pylint==3.0.3
+isort==5.13.2
+coverage==7.4.1
+
+

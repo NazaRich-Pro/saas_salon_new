@@ -1,0 +1,64 @@
+{
+  "common": {
+    "cancel": "Жокко чыгаруу",
+    "confirm": "Ырастоо",
+    "save": "Сактоо",
+    "back": "Артка",
+    "next": "Кийинки",
+    "loading": "Жүктөлүүдө...",
+    "error": "Ката",
+    "success": "Ийгиликтүү"
+  },
+  "booking": {
+    "title": "Онлайн жазылуу",
+    "selectService": "Кызматты тандаңыз",
+    "selectDate": "Датаны тандаңыз",
+    "selectTime": "Убакытты тандаңыз",
+    "selectStaff": "Усташты тандаңыз",
+    "anyStaff": "Каалаган уста",
+    "contactInfo": "Байланыш маалыматы",
+    "yourName": "Сиздин атыңыз",
+    "phone": "Телефон",
+    "email": "Email (милдеттүү эмес)",
+    "notes": "Каалоолор (милдеттүү эмес)",
+    "bookNow": "Жазылуу",
+    "bookingSuccess": "Жазуу ийгиликтүү түзүлдү!",
+    "bookingError": "Жазууну түзүүдө ката",
+    "noSlotsAvailable": "Бул датада бош орун жок",
+    "selectAnotherDate": "Башка датаны тандаңыз",
+    "duration": "Узактыгы",
+    "price": "Баасы",
+    "total": "Жалпы",
+    "minutes": "мүн",
+    "kgs": "сом"
+  },
+  "service": {
+    "categories": "Кызмат категориялары",
+    "allServices": "Бардык кызматтар",
+    "duration": "Узактыгы",
+    "from": "баштап"
+  },
+  "staff": {
+    "ourMasters": "Биздин усталар",
+    "experience": "Тажрыйба",
+    "years": "жыл"
+  },
+  "appointment": {
+    "status": {
+      "pending": "Ырастоону күтүүдө",
+      "confirmed": "Ырасталды",
+      "completed": "Аяктады",
+      "cancelled": "Жокко чыгарылды",
+      "noShow": "Келген жок",
+      "rescheduled": "Көчүрүлдү"
+    },
+    "details": "Жазуу деталдары",
+    "date": "Дата",
+    "time": "Убакыт",
+    "master": "Уста",
+    "services": "Кызматтар",
+    "customer": "Кардар",
+    "downloadCalendar": "Календарга кошуу"
+  }
+}
+

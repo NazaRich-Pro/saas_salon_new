@@ -1,0 +1,14 @@
+http:
+  middlewares:
+    security-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        referrerPolicy: no-referrer-when-downgrade
+        stsSeconds: 31536000
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+
+

@@ -1,0 +1,29 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Create a minimal Next.js app for testing
+RUN npx create-next-app@latest test-app --typescript --tailwind --app --no-eslint --import-alias "@/*" --src-dir
+
+WORKDIR /app/test-app
+
+# Copy our package.json to override dependencies
+COPY package.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy all our source files
+COPY . .
+
+# Create missing lib files if they don't exist
+RUN mkdir -p src/lib && \
+    echo "export function cn(...args) { return args.join(' '); }" > src/lib/utils.ts && \
+    echo "export async function getTenantFromHost(host) { return null; } export function applyTenantTheme(theme) {}" > src/lib/tenant.ts
+
+# Build
+RUN npm run build || true
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

@@ -1,0 +1,64 @@
+{
+  "common": {
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "save": "Сохранить",
+    "back": "Назад",
+    "next": "Далее",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно"
+  },
+  "booking": {
+    "title": "Онлайн запись",
+    "selectService": "Выберите услугу",
+    "selectDate": "Выберите дату",
+    "selectTime": "Выберите время",
+    "selectStaff": "Выберите мастера",
+    "anyStaff": "Любой мастер",
+    "contactInfo": "Контактная информация",
+    "yourName": "Ваше имя",
+    "phone": "Телефон",
+    "email": "Email (необязательно)",
+    "notes": "Пожелания (необязательно)",
+    "bookNow": "Записаться",
+    "bookingSuccess": "Запись успешно создана!",
+    "bookingError": "Ошибка при создании записи",
+    "noSlotsAvailable": "Нет свободных слотов на эту дату",
+    "selectAnotherDate": "Выберите другую дату",
+    "duration": "Длительность",
+    "price": "Цена",
+    "total": "Итого",
+    "minutes": "мин",
+    "kgs": "сом"
+  },
+  "service": {
+    "categories": "Категории услуг",
+    "allServices": "Все услуги",
+    "duration": "Длительность",
+    "from": "от"
+  },
+  "staff": {
+    "ourMasters": "Наши мастера",
+    "experience": "Опыт",
+    "years": "лет"
+  },
+  "appointment": {
+    "status": {
+      "pending": "Ожидает подтверждения",
+      "confirmed": "Подтверждена",
+      "completed": "Завершена",
+      "cancelled": "Отменена",
+      "noShow": "Не явился",
+      "rescheduled": "Перенесена"
+    },
+    "details": "Детали записи",
+    "date": "Дата",
+    "time": "Время",
+    "master": "Мастер",
+    "services": "Услуги",
+    "customer": "Клиент",
+    "downloadCalendar": "Добавить в календарь"
+  }
+}
+

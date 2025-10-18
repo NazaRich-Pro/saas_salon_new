@@ -1,0 +1,64 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "booking": {
+    "title": "Online Booking",
+    "selectService": "Select Service",
+    "selectDate": "Select Date",
+    "selectTime": "Select Time",
+    "selectStaff": "Select Master",
+    "anyStaff": "Any Master",
+    "contactInfo": "Contact Information",
+    "yourName": "Your Name",
+    "phone": "Phone",
+    "email": "Email (optional)",
+    "notes": "Special Requests (optional)",
+    "bookNow": "Book Now",
+    "bookingSuccess": "Booking created successfully!",
+    "bookingError": "Error creating booking",
+    "noSlotsAvailable": "No available slots for this date",
+    "selectAnotherDate": "Select another date",
+    "duration": "Duration",
+    "price": "Price",
+    "total": "Total",
+    "minutes": "min",
+    "kgs": "KGS"
+  },
+  "service": {
+    "categories": "Service Categories",
+    "allServices": "All Services",
+    "duration": "Duration",
+    "from": "from"
+  },
+  "staff": {
+    "ourMasters": "Our Masters",
+    "experience": "Experience",
+    "years": "years"
+  },
+  "appointment": {
+    "status": {
+      "pending": "Pending Confirmation",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "noShow": "No Show",
+      "rescheduled": "Rescheduled"
+    },
+    "details": "Appointment Details",
+    "date": "Date",
+    "time": "Time",
+    "master": "Master",
+    "services": "Services",
+    "customer": "Customer",
+    "downloadCalendar": "Add to Calendar"
+  }
+}
+

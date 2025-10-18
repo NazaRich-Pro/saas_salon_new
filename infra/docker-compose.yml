@@ -1,0 +1,244 @@
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:v3.1
+    container_name: beautyhub_traefik
+    command:
+      - --api.dashboard=true
+      - --api.insecure=false
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL:-admin@saas.akylman.online}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --log.level=INFO
+      - --accesslog=true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik:/etc/traefik:ro
+      - letsencrypt:/letsencrypt
+    networks:
+      - beautyhub
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dashboard.rule=Host(`traefik.${PRIMARY_DOMAIN:-saas.akylman.online}`)
+      - traefik.http.routers.dashboard.entrypoints=websecure
+      - traefik.http.routers.dashboard.tls.certresolver=le
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.middlewares=auth
+      - traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_AUTH:-admin:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/}
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: beautyhub_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-saas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
+      POSTGRES_DB: ${POSTGRES_DB:-saas}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    networks:
+      - beautyhub
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-saas} -d ${POSTGRES_DB:-saas}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: 
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=1GB"
+      - "-c"
+      - "maintenance_work_mem=64MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      - "-c"
+      - "work_mem=1310kB"
+      - "-c"
+      - "min_wal_size=1GB"
+      - "-c"
+      - "max_wal_size=4GB"
+
+  redis:
+    image: redis:7-alpine
+    container_name: beautyhub_redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    networks:
+      - beautyhub
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  api:
+    build: 
+      context: ../apps/api
+      dockerfile: Dockerfile
+    container_name: beautyhub_api
+    env_file: ../.env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-saas}:${POSTGRES_PASSWORD:-supersecret}@postgres:5432/${POSTGRES_DB:-saas}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - api_static:/app/staticfiles
+      - api_media:/app/media
+    networks:
+      - beautyhub
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api.rule=(HostRegexp(`^[a-zA-Z0-9-]+\\.${PRIMARY_DOMAIN:-saas.akylman.online}$$`) || Host(`${PRIMARY_DOMAIN:-saas.akylman.online}`)) && PathPrefix(`/api`)
+      - traefik.http.routers.api.entrypoints=websecure
+      - traefik.http.routers.api.tls.certresolver=le
+      - traefik.http.routers.api.middlewares=api-stripprefix
+      - traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api
+      - traefik.http.services.api.loadbalancer.server.port=8000
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    container_name: beautyhub_web
+    env_file: ../.env
+    environment:
+      - NEXT_PUBLIC_API_URL=https://${PRIMARY_DOMAIN:-saas.akylman.online}/api
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - beautyhub
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.web.rule=HostRegexp(`^[a-zA-Z0-9-]+\\.${PRIMARY_DOMAIN:-saas.akylman.online}$$`) || Host(`${PRIMARY_DOMAIN:-saas.akylman.online}`)
+      - traefik.http.routers.web.entrypoints=websecure
+      - traefik.http.routers.web.tls.certresolver=le
+      - traefik.http.routers.web.priority=1
+      - traefik.http.services.web.loadbalancer.server.port=3000
+
+  worker:
+    build:
+      context: ../apps
+      dockerfile: worker/Dockerfile
+    container_name: beautyhub_worker
+    env_file: ../.env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-saas}:${POSTGRES_PASSWORD:-supersecret}@postgres:5432/${POSTGRES_DB:-saas}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    networks:
+      - beautyhub
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping -d celery@$$HOSTNAME"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  beat:
+    build:
+      context: ../apps
+      dockerfile: worker/beat.Dockerfile
+    container_name: beautyhub_beat
+    env_file: ../.env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-saas}:${POSTGRES_PASSWORD:-supersecret}@postgres:5432/${POSTGRES_DB:-saas}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    networks:
+      - beautyhub
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep 'celery beat' || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  beautyhub:
+    driver: bridge
+    name: beautyhub_network
+
+volumes:
+  pgdata:
+    name: beautyhub_postgres_data
+  redisdata:
+    name: beautyhub_redis_data
+  letsencrypt:
+    name: beautyhub_letsencrypt
+  api_static:
+    name: beautyhub_api_static
+  api_media:
+    name: beautyhub_api_media
+
+
