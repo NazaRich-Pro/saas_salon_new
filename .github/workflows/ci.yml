@@ -2,24 +2,24 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   lint-backend:
     name: Lint Backend (Python)
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
@@ -27,22 +27,22 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('apps/api/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      
+
       - name: Install dependencies
         working-directory: apps/api
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install flake8 black isort
-      
+
       - name: Run flake8
         working-directory: apps/api
         run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      
+
       - name: Check code formatting (black)
         working-directory: apps/api
         run: black --check .
-      
+
       - name: Check import sorting (isort)
         working-directory: apps/api
         run: isort --check-only .
@@ -50,32 +50,34 @@ jobs:
   lint-frontend:
     name: Lint Frontend (Next.js)
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - name: Cache npm dependencies
         uses: actions/cache@v3
         with:
-          path: apps/web/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('apps/web/package-lock.json') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('apps/web/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-nextjs-
-      
+            ${{ runner.os }}-npm-
+
       - name: Install dependencies
         working-directory: apps/web
         run: npm ci
-      
+
       - name: Run ESLint
         working-directory: apps/web
-        run: npm run lint
-      
+        run: |
+          npm install --save-dev eslint typescript @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-config-next
+          npm run lint
+
       - name: Check TypeScript
         working-directory: apps/web
         run: npm run type-check || true
@@ -83,7 +85,7 @@ jobs:
   test-backend:
     name: Test Backend (Django)
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -98,7 +100,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
+
       redis:
         image: redis:7-alpine
         ports:
@@ -108,36 +110,36 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('apps/api/requirements.txt') }}
-      
+
       - name: Install dependencies
         working-directory: apps/api
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-django pytest-cov
-      
+
       - name: Run migrations
         working-directory: apps/api
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
         run: python manage.py migrate
-      
+
       - name: Run tests
         working-directory: apps/api
         env:
@@ -145,22 +147,23 @@ jobs:
           REDIS_URL: redis://localhost:6379
           DJANGO_SETTINGS_MODULE: config.settings
         run: pytest --cov=. --cov-report=xml --cov-report=term
-      
+
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
-          file: apps/api/coverage.xml
+          files: apps/api/coverage.xml
           flags: backend
           name: backend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -168,7 +171,7 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
-      
+
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -178,7 +181,7 @@ jobs:
     name: All Checks Passed
     runs-on: ubuntu-latest
     needs: [lint-backend, lint-frontend, test-backend, security-scan]
-    
+
     steps:
       - name: Success message
         run: echo "✅ All CI checks passed successfully!"
